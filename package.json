@@ -13,6 +13,6 @@
   },
   "scripts": {
     "test": "ava",
-    "start": "http-server"
+    "start": "http-server -c-1"
   }
 }
