@@ -1,0 +1,16 @@
+{
+  "name": "snapdom2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Asad Saeeduddin <masaeedu@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "snabbdom": "^0.7.3"
+  },
+  "devDependencies": {
+    "ava": "^1.2.0"
+  },
+  "scripts": {
+    "test": "ava"
+  }
+}
