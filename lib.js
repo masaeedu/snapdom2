@@ -24,7 +24,22 @@ const Components = (() => {
       h("button", { on: { click: set(i - 1) } }, ["-"])
     ]);
 
-  return { counter };
+  // :: WebComponent Boolean
+  const spring = set => pressed =>
+    h(
+      "button",
+      {
+        on: {
+          mousedown: set(true),
+          mouseleave: set(false),
+          mouseup: set(false),
+          mouseenter: e => (e.buttons === 1 ? set(true)() : set(false)())
+        }
+      },
+      pressed ? "Under pressure!" : "Press me!"
+    );
+
+  return { counter, spring };
 })();
 
 // :: HTMLElement -> WebTarget
