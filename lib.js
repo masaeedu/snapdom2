@@ -30,14 +30,9 @@ const Fn = (() => {
 
 // :: type Component m s u v = (u -> m ()) -> s -> v
 // :: type Target m v = v -> m ()
-// :: type StateManager m s u = {
-// ::   get: (s -> m x) -> m x,
-// ::   set: u -> m ()
-// :: }
 
 // :: type WebComponent s = Component IO! s s VDom
 // :: type WebTarget = Target IO! VDom
-// :: type WebStateManager s = StateManager IO! s s
 
 // :: Lens s u s' u' -> Component m s u v -> Component m s' u' v
 const refocus = l => cmp => set_ => s_ => {
