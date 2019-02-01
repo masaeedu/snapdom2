@@ -5,7 +5,7 @@ const snap = cmp => target => {
   return rec;
 };
 
-const { counter, spring } = Components;
-const render = snap(spring)(wt(document.getElementById("app")));
+const { counter, spring, json, ui } = Components;
+const render = snap(ui)(wt(document.getElementById("app")));
 
-render(false)();
+render({ count: 0, pressed: false })();

@@ -4,6 +4,30 @@ const patch = snabbdom.init([
 ]);
 const h = require("snabbdom/h").default;
 
+// :: type Lens a b s t = { view: s -> a, update: s -> b -> t }
+const Lens = (() => {
+  // :: k -> Lens v v' { [k]: v } { [k]: v' }
+  const prop = k => {
+    const view = ({ [k]: v }) => v;
+    const update = s => v_ => ({ ...s, [k]: v_ });
+
+    return { view, update };
+  };
+
+  const view = l => l.view;
+  const update = l => l.update;
+
+  return { prop, view, update };
+})();
+const { view, update } = Lens;
+
+const Fn = (() => {
+  // :: (i' -> i) -> (i -> o) -> (i' -> o)
+  const contramap = f => g => i_ => g(f(i_));
+
+  return { contramap };
+})();
+
 // :: type Component m s u v = (u -> m ()) -> s -> v
 // :: type Target m v = v -> m ()
 // :: type StateManager m s u = {
@@ -14,6 +38,13 @@ const h = require("snabbdom/h").default;
 // :: type WebComponent s = Component IO! s s VDom
 // :: type WebTarget = Target IO! VDom
 // :: type WebStateManager s = StateManager IO! s s
+
+// :: Lens s u s' u' -> Component m s u v -> Component m s' u' v
+const refocus = l => cmp => set_ => s_ => {
+  const s = view(l)(s_);
+  const set = Fn.contramap(update(l)(s_))(set_);
+  return cmp(set)(s);
+};
 
 const Components = (() => {
   // :: WebComponent Integer
@@ -39,7 +70,18 @@ const Components = (() => {
       pressed ? "Under pressure!" : "Press me!"
     );
 
-  return { counter, spring };
+  // :: WebComponent JSValue
+  const json = _ => x => h("pre", [h("code", JSON.stringify(x))]);
+
+  // :: WebComponent { count: Integer, pressed: Boolean }
+  const ui = set => s =>
+    h("div", [
+      refocus(Lens.prop("count"))(counter)(set)(s),
+      refocus(Lens.prop("pressed"))(spring)(set)(s),
+      json(set)(s)
+    ]);
+
+  return { counter, spring, json, ui };
 })();
 
 // :: HTMLElement -> WebTarget
