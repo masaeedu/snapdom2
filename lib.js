@@ -20,8 +20,8 @@ const Components = (() => {
   const counter = set => i =>
     h("div", [
       `The current count is ${i}`,
-      h("button", { on: { click: set(i + 1) } }, ["+"]),
-      h("button", { on: { click: set(i - 1) } }, ["-"])
+      h("button", { on: { click: set(i + 1) } }, "+"),
+      h("button", { on: { click: set(i - 1) } }, "-")
     ]);
 
   // :: WebComponent Boolean
