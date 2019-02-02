@@ -1,4 +1,4 @@
-const { Components, wt } = require("./lib");
+const { Components, domTarget } = require("./snabbdom");
 
 const snap = cmp => target => {
   const rec = s => target(cmp(x => () => rec(x)())(s));
@@ -6,6 +6,6 @@ const snap = cmp => target => {
 };
 
 const { counter, spring, json, ui } = Components;
-const render = snap(ui)(wt(document.getElementById("app")));
+const render = snap(ui)(domTarget(document.getElementById("app")));
 
 render({ count: 0, pressed: false })();
