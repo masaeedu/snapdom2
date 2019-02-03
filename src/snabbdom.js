@@ -1,4 +1,4 @@
-const snabbdom = require("snabbdom/snabbdom");
+const snabbdom = require("snabbdom");
 const patch = snabbdom.init([
   require("snabbdom/modules/eventlisteners").default
 ]);

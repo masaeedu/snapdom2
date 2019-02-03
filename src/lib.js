@@ -1,3 +1,5 @@
+const { Fn } = require("@masaeedu/fp");
+
 // :: type Lens a b s t = { view: s -> a, update: s -> b -> t }
 const Lens = (() => {
   // :: k -> Lens v v' { [k]: v } { [k]: v' }
@@ -14,13 +16,6 @@ const Lens = (() => {
   return { prop, view, update };
 })();
 const { view, update } = Lens;
-
-const Fn = (() => {
-  // :: (i' -> i) -> (i -> o) -> (i' -> o)
-  const contramap = f => g => i_ => g(f(i_));
-
-  return { contramap };
-})();
 
 // :: type Component m s u v = (u -> m ()) -> s -> v
 // :: type Target m v = v -> m ()
