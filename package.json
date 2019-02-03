@@ -5,7 +5,7 @@
   "author": "Asad Saeeduddin <masaeedu@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@masaeedu/fp": "^9.0.0",
+    "@masaeedu/fp": "https://github.com/masaeedu/fp.git#33b4fa3",
     "snabbdom": "^0.7.3"
   },
   "resolutions": {
