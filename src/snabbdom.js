@@ -12,8 +12,8 @@ const Components = (() => {
   // :: WebComponent Integer
   const counter = set => i =>
     h("div", [
-      `The current count is ${i}`,
       h("button", { on: { click: set(i + 1) } }, "+"),
+      h("span", `${i}`),
       h("button", { on: { click: set(i - 1) } }, "-")
     ]);
 
