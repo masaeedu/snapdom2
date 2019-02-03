@@ -3,7 +3,8 @@ const patch = snabbdom.init([
   require("snabbdom/modules/eventlisteners").default
 ]);
 const h = require("snabbdom/h").default;
-const { Lens, Fn, refocus } = require("./lib");
+const { Arr, Fn } = require("@masaeedu/fp");
+const { Lens, refocus, refocusMany } = require("./lib");
 
 // :: type WebComponent s = Component IO! s s VDom
 // :: type WebTarget = Target IO! VDom
@@ -32,18 +33,30 @@ const Components = (() => {
       pressed ? "Under pressure!" : "Press me!"
     );
 
+  // :: WebComponent String
+  const input = set => value =>
+    h("input", { value, on: { input: e => set(e.target.value)() } });
+
   // :: WebComponent JSValue
   const json = _ => x => h("pre", [h("code", JSON.stringify(x))]);
 
-  // :: WebComponent { count: Integer, pressed: Boolean }
-  const ui = set => s =>
-    h("div", [
-      refocus(Lens.prop("count"))(counter)(set)(s),
-      refocus(Lens.prop("pressed"))(spring)(set)(s),
-      json(set)(s)
-    ]);
+  // :: type SomeState = { count: Integer, pressed: Boolean, text: String }
 
-  return { counter, spring, json, ui };
+  const div = cs => h("div", cs);
+
+  // :: WebComponent SomeState
+  const editor = refocusMany(div)(div)({
+    count: counter,
+    pressed: spring,
+    text: input
+  });
+
+  // :: WebComponent SomeState
+  const ui = set => s => {
+    return h("div", [json(set)(s), editor(set)(s)]);
+  };
+
+  return { counter, spring, input, json, ui };
 })();
 
 // :: HTMLElement -> WebTarget

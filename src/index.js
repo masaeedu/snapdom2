@@ -8,4 +8,4 @@ const snap = cmp => target => {
 const { counter, spring, json, ui } = Components;
 const render = snap(ui)(domTarget(document.getElementById("app")));
 
-render({ count: 0, pressed: false })();
+render({ count: 0, pressed: false, text: "" })();

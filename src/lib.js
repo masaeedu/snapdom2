@@ -1,4 +1,4 @@
-const { Fn } = require("@masaeedu/fp");
+const { Fn, Obj, Arr } = require("@masaeedu/fp");
 
 // :: type Lens a b s t = { view: s -> a, update: s -> b -> t }
 const Lens = (() => {
@@ -27,4 +27,14 @@ const refocus = l => cmp => set_ => s_ => {
   return cmp(set)(s);
 };
 
-module.exports = { Lens, Fn, refocus };
+// Take a dictionary of components and make a component that
+// operates on the corresponding dictionary
+const refocusMany = sep => wrap => many => set => s =>
+  wrap(
+    Fn.passthru(many)([
+      Obj.mapWithKey(k => refocus(Lens.prop(k))),
+      Obj.foldMap(Arr)(c => [sep(c(set)(s))])
+    ])
+  );
+
+module.exports = { Lens, refocus, refocusMany };
