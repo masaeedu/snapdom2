@@ -2,12 +2,12 @@ const test = require("ava");
 const { adt, match } = require("@masaeedu/adt");
 const { Arr, Fn, State } = require("@masaeedu/fp");
 
-// :: type VDom m = [ElementName, Attributes m, (VDom m)[]]
-
-// More structured way of unpacking vdom nodes
+// :: type VDom m = String | '[ElementName, Attributes m, (VDom m)[]]
 const VDom = {
-  // :: { Node: ElementName -> Attributes m -> (VDom m)[] -> x } -> VDom m -> x
-  match: ({ Node }) => Fn.uncurry(Node)
+  Text: s => s,
+  Node: el => attr => cs => [el, attr, cs],
+  match: ({ Text, Node }) => x =>
+    typeof x === "string" ? Text(x) : Fn.uncurry(Node)(x)
 };
 
 // :: ADT '{ Event: '[Int[], String] }
@@ -19,16 +19,18 @@ const effectOf = name =>
     Node: _ => attr => _ => attr.on[name]
   });
 
-// :: VDom m -> Event -> m ()
-const interpretEvent = vdom =>
-  match({
-    Event: path => name => {
-      const pickChild = i => VDom.match({ Node: _ => _ => cs => cs[i] });
-      const node = Fn.pipe(Arr.map(pickChild)(path))(vdom);
+// Warning: partial, non-existent index will give you undefined
+// :: Int -> VDom m -> VDom m
+const pickChild = i => VDom.match({ Node: _ => _ => cs => cs[i] });
 
-      return effectOf(name)(node);
-    }
-  });
+// ::  Event -> VDom m -> m ()
+const interpretEvent = match({
+  Event: path => name => {
+    const pickTarget = Fn.pipe(Arr.map(pickChild)(path));
+
+    return vdom => effectOf(name)(pickTarget(vdom));
+  }
+});
 
 // :: Component m s s (VDom m) -> Event[] -> State s ()
 const simulate = cmp => {
@@ -40,7 +42,7 @@ const simulate = cmp => {
     Cons: e => es =>
       State[">>="](get)(s => {
         const vdom = cmp(x => State[">>"](put(x))(rec(es)))(s);
-        return interpretEvent(vdom)(e);
+        return interpretEvent(e)(vdom);
       })
   });
 
