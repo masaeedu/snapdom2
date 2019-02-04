@@ -1,6 +1,6 @@
 const test = require("ava");
 const { adt, match } = require("@masaeedu/adt");
-const { Arr, Fn, State } = require("@masaeedu/fp");
+const { Arr, Fn, State, Maybe, log } = require("@masaeedu/fp");
 
 // :: type VDom m = String | '[ElementName, Attributes m, (VDom m)[]]
 const VDom = {
@@ -32,18 +32,28 @@ const interpretEvent = match({
   }
 });
 
-// :: Component m s s (VDom m) -> Event[] -> State s ()
-const simulate = cmp => {
-  const { get, put } = State;
+// :: type Target m v = Maybe (v -> m (Target m v))
 
-  // :: Event[] -> State s ()
+// :: Monad m -> Event[] - Target m v
+const interpretEvents = M => {
+  const { Nothing, Just } = Maybe;
+
+  // :: Event[] -> Target m v
   const rec = Arr.match({
-    Nil: State.of(undefined),
-    Cons: e => es =>
-      State[">>="](get)(s => {
-        const vdom = cmp(x => State[">>"](put(x))(rec(es)))(s);
-        return interpretEvent(e)(vdom);
-      })
+    Nil: Nothing,
+    Cons: e => es => Just(v => M["<$"](rec(es))(interpretEvent(e)(v)))
+  });
+
+  return rec;
+};
+
+// :: MonadState s m -> Component m s s v -> Target m v -> m ()
+const snap = M => cmp => {
+  // :: Target m v -> m ()
+  const rec = match({
+    Nothing: M.of(undefined),
+    Just: render =>
+      M[">>="](M.get)(Fn.pipe([cmp(M.put), render, M["=<<"](rec)]))
   });
 
   return rec;
@@ -65,6 +75,6 @@ test("incrementing five times and decrementing thrice gives a final state of 2",
   const dec = Event([2])("click");
 
   const events = [inc, inc, inc, inc, dec, inc, dec, dec];
-  const result = simulate(counter)(events)(0);
+  const result = snap(State)(counter)(interpretEvents(State)(events))(0);
   t.snapshot(result);
 });
