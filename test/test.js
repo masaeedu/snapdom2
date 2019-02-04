@@ -32,7 +32,20 @@ const interpretEvent = match({
   }
 });
 
+// :: type Component m s u v = (u -> m ()) -> s -> v
 // :: type Target m v = Maybe (v -> m (Target m v))
+
+// :: MonadState s m -> Component m s s v -> Target m v -> m ()
+const snap = M => cmp => {
+  // :: Target m v -> m ()
+  const rec = match({
+    Nothing: M.of(undefined),
+    Just: render =>
+      M[">>="](M.get)(Fn.pipe([cmp(M.put), render, M["=<<"](rec)]))
+  });
+
+  return rec;
+};
 
 // :: Monad m -> Event[] -> Target m v
 const interpretEvents = M => {
@@ -42,18 +55,6 @@ const interpretEvents = M => {
   const rec = Arr.match({
     Nil: Nothing,
     Cons: e => es => Just(v => M["<$"](rec(es))(interpretEvent(e)(v)))
-  });
-
-  return rec;
-};
-
-// :: MonadState s m -> Component m s s v -> Target m v -> m ()
-const snap = M => cmp => {
-  // :: Target m v -> m ()
-  const rec = match({
-    Nothing: M.of(undefined),
-    Just: render =>
-      M[">>="](M.get)(Fn.pipe([cmp(M.put), render, M["=<<"](rec)]))
   });
 
   return rec;
