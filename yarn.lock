@@ -303,9 +303,9 @@
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/@masaeedu/do/-/do-0.0.1.tgz#ce35ee8c728238e5db2b069a8e4501afe05e48f2"
 
-"@masaeedu/fp@https://github.com/masaeedu/fp.git#33b4fa3":
+"@masaeedu/fp@https://github.com/masaeedu/fp.git#dev":
   version "8.0.0"
-  resolved "https://github.com/masaeedu/fp.git#33b4fa37f4c593cb53d8baed3da3e8aa6e4ca5c4"
+  resolved "https://github.com/masaeedu/fp.git#a0257ffdd5b81dbc98270c130d7a6b929d5d1d88"
   dependencies:
     "@babel/polyfill" "^7.0.0-beta.52"
     "@masaeedu/adt" "^1.0.3"
