@@ -34,7 +34,7 @@ const interpretEvent = match({
 
 // :: type Target m v = Maybe (v -> m (Target m v))
 
-// :: Monad m -> Event[] - Target m v
+// :: Monad m -> Event[] -> Target m v
 const interpretEvents = M => {
   const { Nothing, Just } = Maybe;
 
