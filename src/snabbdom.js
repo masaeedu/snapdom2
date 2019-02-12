@@ -4,9 +4,21 @@ const patch = snabbdom.init([
 ]);
 const h = require("snabbdom/h").default;
 
-const { Fn, Arr, Obj, Maybe, Cont } = require("@masaeedu/fp");
+const {
+  Fn,
+  Arr,
+  Obj,
+  Maybe,
+  Cont,
+  ReaderT,
+  Lens,
+  cata,
+  ana
+} = require("@masaeedu/fp");
 
-const { cata, Lens, refocus, refocusMany } = require("./lib");
+const { Cmp, refocus, refocusMany } = require("./lib");
+
+const { prop, modify } = Lens;
 
 // :: type Handlers m = { [EventName]: Event -> m () } // TODO: Revisit this, can be more sound
 // :: type Attributes m = { on: Handlers m }
@@ -35,16 +47,44 @@ const VDomF = (() => {
       Node: el => attr => cs => Node(el)(attr)(Arr.map(f)(cs))
     });
 
-  return { Text, Node, match, map };
+  // :: Attributes Cont! -> SnabbdomAttributes
+  const convertHandlers = modify(prop("on"))(Obj.map(h => e => h(e)(_ => {})));
+
+  // :: VDom Cont! -> Snabbdom
+  const v2s = (() => {
+    const alg = match({
+      Text: s => s,
+      Node: el => attr => cs => h(el, convertHandlers(attr), cs)
+    });
+
+    return cata({ map })(alg);
+  })();
+
+  // :: Cont! () -> VDom Cont! -> VDom Cont!
+  const extendHandlers = proceed => {
+    const alg = match({
+      Text,
+      Node: el =>
+        Fn.pipe([
+          modify(prop("on"))(Obj.map(h => e => Cont[">>"](h(e))(proceed))),
+          Node(el)
+        ])
+    });
+
+    return cata({ map })(alg);
+  };
+
+  return { Text, Node, match, map, v2s, extendHandlers };
 })();
 const { Text, Node } = VDomF;
 
 // :: type VDom m = Fix (VDomF m)
 
-// :: type Component' m s v = Component m s s v
+// The specialized components we're going to be working with. These components are polymorphic with respect to the update effect, use an entire new state as the update message, and use the simple s-expr-like vdom representation encoded above
+// :: type Component' s = forall m. Component m s s (VDom m)
 
-const Cmp = (() => {
-  // :: Component' m Integer VDom
+const MyCmp = (() => {
+  // :: Component' Integer
   const counter = set => i => [
     "div",
     ["button", { on: { click: _ => set(i + 1) } }, "+"],
@@ -52,70 +92,42 @@ const Cmp = (() => {
     ["button", { on: { click: _ => set(i - 1) } }, "-"]
   ];
 
-  // :: Component' m Boolean VDom
-  const spring = set => pressed => [
-    "button",
-    {
-      on: {
-        mousedown: _ => set(true),
-        mouseup: _ => set(false),
-        mouseleave: _ => set(false),
-        mouseenter: e => (e.buttons === 1 ? set(true) : set(false))
-      }
-    },
-    pressed ? "Under pressure!" : "Press me!"
-  ];
+  // :: Component' Boolean
+  const spring = set => pressed => {
+    const mousedown = _ => set(true);
+    const mouseup = _ => set(false);
+    const mouseleave = _ => set(false);
+    const mouseenter = e => (e.buttons === 1 ? set(true) : set(false));
 
-  // :: Component' m String VDom
+    const on = { mousedown, mouseup, mouseleave, mouseenter };
+    return ["button", { on }, pressed ? "Under pressure!" : "Press me!"];
+  };
+
+  // :: Component' String
   const input = set => value => [
     "input",
     { value, on: { input: e => set(e.target.value) } }
   ];
 
-  // :: Component' m JSValue VDom
+  // :: Component' JSValue
   const json = _ => x => ["pre", ["code", JSON.stringify(x)]];
 
   // :: type SomeState = { count: Integer, pressed: Boolean, text: String }
 
-  // :: Component' m SomeState VDom
+  const div = v => ["div", v];
+
+  // :: Component' SomeState
   const editor = refocusMany({
-    count: counter,
-    pressed: spring,
-    text: input
+    count: Cmp.map(div)(counter),
+    pressed: Cmp.map(div)(spring),
+    text: Cmp.map(div)(input)
   });
 
-  // :: Component' m SomeState VDom
-  const ui = set => s => ["div", json(set)(s), editor(set)(s)];
+  // :: Component' SomeState
+  const ui = Cmp.map(cs => ["div", ...cs])(Arr.sequence(Cmp)([json, editor]));
 
-  return { counter, spring, input, json, ui };
+  return { counter, spring, input, json, editor, ui };
 })();
-
-// This is where we monomorphize the effect and tie ourselves
-// to Snabbdom
-
-const { prop, modify } = Lens;
-
-// :: Attributes Cont! -> SnabbdomAttributes
-const convertHandlers = modify(prop("on"))(Obj.map(h => e => h(e)(_ => {})));
-
-// :: VDom Cont! -> Snabbdom
-const v2s = VDomF.match({
-  Text: s => s,
-  Node: el => attr => cs => h(el, convertHandlers(attr), Arr.map(v2s)(cs))
-});
-
-// :: Cont! () -> VDom Cont! -> VDom Cont!
-const extendHandlers = proceed => {
-  const alg = VDomF.match({
-    Text,
-    Node: el =>
-      Fn.pipe([
-        modify(prop("on"))(Obj.map(h => e => Cont[">>"](h(e))(proceed))),
-        Node(el)
-      ])
-  });
-  return cata(VDomF)(alg);
-};
 
 // :: type DOMTarget = Target Cont! (VDom Cont!)
 
@@ -125,20 +137,20 @@ const domTarget = mountpoint => {
   let oldVDom;
 
   // :: Maybe (v -> Cont! DOMTarget)
-  const rec = Just(vdom => cb => {
+  const t = Just(vdom => cb => {
     // :: Cont!
     const proceed = cb_ => {
-      cb(rec);
+      cb(t);
       cb_();
     };
     // Sequence the callback onto all the handlers,
-    // where it will be fed the target again
-    const vdom_ = v2s(extendHandlers(proceed)(vdom));
+    // where it will be fed the same target
+    const vdom_ = VDomF.v2s(VDomF.extendHandlers(proceed)(vdom));
     patch(oldVDom || mountpoint, vdom_);
     oldVDom = vdom_;
   });
 
-  return rec;
+  return t;
 };
 
-module.exports = { VDomF, Cmp, domTarget };
+module.exports = { VDomF, MyCmp, domTarget };

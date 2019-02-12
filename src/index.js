@@ -11,7 +11,7 @@ const {
   Functor
 } = require("@masaeedu/fp");
 const { snap } = require("./lib");
-const { Cmp, domTarget } = require("./snabbdom");
+const { MyCmp, domTarget } = require("./snabbdom");
 
 const ior = { v: { count: 0, pressed: false, text: "" } };
 
@@ -39,15 +39,7 @@ const Const = { applyAction: s => _ => s };
 // :: MonadState s Cont!
 const IORefState = IORefUpdate(Const);
 
-const { Just, Nothing } = Maybe;
-// :: Monad m -> Target m v -> Target (ReaderT e m) v
-const lift = M =>
-  match({
-    Nothing,
-    Just: t => Just(v => _ => M.map(lift)(t(v)))
-  });
-
-const { counter, spring, json, ui } = Cmp;
+const { counter, spring, json, ui } = MyCmp;
 // :: Cont! ()
 const render = snap(IORefState)(ui)(domTarget(document.getElementById("app")));
 

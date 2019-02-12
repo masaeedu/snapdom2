@@ -2,7 +2,7 @@ const test = require("ava");
 const { adt, match } = require("@masaeedu/adt");
 const { Arr, Fn, State, Maybe, log } = require("@masaeedu/fp");
 const { snap } = require("../src/lib");
-const { Cmp, VDomF } = require("../src/snabbdom");
+const { MyCmp, VDomF } = require("../src/snabbdom");
 
 // :: ADT '{ Event: '[Int[], String, DOM.Event] }
 const { Event } = adt({ Event: ["Int[]", "String", "DOM.Event"] });
@@ -39,7 +39,7 @@ const interpretEvents = M => {
   return rec;
 };
 
-const { counter } = Cmp;
+const { counter } = MyCmp;
 test("incrementing five times and decrementing thrice gives a final state of 2", t => {
   const inc = Event([0])("click")({});
   const dec = Event([2])("click")({});
