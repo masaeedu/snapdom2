@@ -124,7 +124,10 @@ const MyCmp = (() => {
   });
 
   // :: Component' SomeState
-  const ui = Cmp.map(cs => ["div", ...cs])(Arr.sequence(Cmp)([json, editor]));
+  const ui = Fn.passthru([json, editor])([
+    Arr.sequence(Cmp),
+    Cmp.map(cs => ["div", ...cs])
+  ]);
 
   return { counter, spring, input, json, editor, ui };
 })();
